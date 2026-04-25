@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FairGraph-Audit | GNN Forensic Auditing Dashboard</title>
+    <meta name="description" content="Forensic auditing tool for GNN-based fraud detection. Quantifies ego vs structural feature reliance for regulatory compliance.">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+
+<!-- Hidden data payload -->
+<script id="app-data" type="application/json">{{ data | safe }}</script>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+    <div class="logo">
+        <div class="logo-icon">⛨</div>
+        <div>
+            <div class="logo-text">FairGraph</div>
+            <div class="logo-tag">Audit Engine v1.0</div>
+        </div>
+    </div>
+    <ul class="nav-links">
+        <li><a href="#overview" class="active"><i class="fas fa-chart-pie"></i> Overview</a></li>
+        <li><a href="#reliance"><i class="fas fa-balance-scale"></i> Reliance Analysis</a></li>
+        <li><a href="#bias"><i class="fas fa-exclamation-triangle"></i> Bias Detection</a></li>
+        <li><a href="#explorer"><i class="fas fa-search"></i> Node Explorer</a></li>
+        <li><a href="#remediation"><i class="fas fa-tools"></i> Remediation</a></li>
+        <li><a href="#compliance-section"><i class="fas fa-check-circle"></i> Compliance</a></li>
+    </ul>
+    <div style="padding: 16px 24px; border-top: 1px solid var(--border); margin-top: auto;">
+        <div style="font-size: 0.72rem; color: var(--text-muted);">Powered by</div>
+        <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Google Vertex AI</div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="content">
+
+    <!-- Header -->
+    <div class="page-header">
+        <h1>FairGraph-Audit Dashboard</h1>
+        <p>Forensic auditing of GNN-based fraud detection — Ego vs Structural Feature Reliance Analysis</p>
+    </div>
+
+    <!-- Model Metrics Bar -->
+    <div class="metrics-bar">
+        <div class="metric-item"><span class="metric-label">Accuracy</span><span class="metric-value" id="m-accuracy">—</span></div>
+        <div class="metric-item"><span class="metric-label">Precision</span><span class="metric-value" id="m-precision">—</span></div>
+        <div class="metric-item"><span class="metric-label">Recall</span><span class="metric-value" id="m-recall">—</span></div>
+        <div class="metric-item"><span class="metric-label">F1 Score</span><span class="metric-value" id="m-f1">—</span></div>
+        <div class="metric-item"><span class="metric-label">AUC-ROC</span><span class="metric-value" id="m-auc">—</span></div>
+    </div>
+
+    <!-- Overview Section -->
+    <section id="overview" class="section">
+        <h2 class="section-title"><i class="fas fa-chart-pie"></i> Audit Overview</h2>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="card-icon cyan"><i class="fas fa-project-diagram"></i></div>
+                <div class="card-value" id="total-nodes">—</div>
+                <div class="card-label">Total Transactions</div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon purple"><i class="fas fa-microscope"></i></div>
+                <div class="card-value" id="nodes-audited">—</div>
+                <div class="card-label">Nodes Audited</div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon red"><i class="fas fa-flag"></i></div>
+                <div class="card-value" id="fraud-flagged">—</div>
+                <div class="card-label">Fraud Flagged</div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon yellow"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="card-value" id="bias-alerts">—</div>
+                <div class="card-label">Structural Bias Alerts</div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon green"><i class="fas fa-shield-alt"></i></div>
+                <div class="card-value" id="fairness-score">—</div>
+                <div class="card-label">Fairness Status</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reliance Analysis -->
+    <section id="reliance" class="section">
+        <h2 class="section-title"><i class="fas fa-balance-scale"></i> Feature Reliance Analysis</h2>
+        <div class="grid-2">
+            <div class="chart-container">
+                <h3>Structural Reliance Distribution</h3>
+                <div id="reliance-dist-chart" style="height: 320px;"></div>
+            </div>
+            <div class="chart-container">
+                <h3>Ego vs Structural Attribution Scatter</h3>
+                <div id="ego-struct-chart" style="height: 320px;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bias Detection -->
+    <section id="bias" class="section">
+        <h2 class="section-title"><i class="fas fa-exclamation-triangle"></i> Bias Detection Results</h2>
+        <div id="bias-alerts"></div>
+    </section>
+
+    <!-- Node Explorer -->
+    <section id="explorer" class="section">
+        <h2 class="section-title"><i class="fas fa-search"></i> Transaction Node Explorer</h2>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Node ID</th>
+                        <th>Prediction</th>
+                        <th>Confidence</th>
+                        <th>Reliance Ratio</th>
+                        <th>Flag</th>
+                    </tr>
+                </thead>
+                <tbody id="node-tbody"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Remediation -->
+    <section id="remediation" class="section">
+        <h2 class="section-title"><i class="fas fa-tools"></i> Remediation Recommendations</h2>
+        <div id="rec-container"></div>
+    </section>
+
+    <!-- Compliance -->
+    <section id="compliance-section" class="section">
+        <h2 class="section-title"><i class="fas fa-check-circle"></i> Regulatory Compliance</h2>
+        <div id="compliance-content"></div>
+    </section>
+
+</main>
+
+<!-- Node Detail Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+        <h2><span id="modal-title">Transaction Detail</span><button class="modal-close" onclick="closeModal()">&times;</button></h2>
+        <div id="modal-body"></div>
+    </div>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+</body>
+</html>
